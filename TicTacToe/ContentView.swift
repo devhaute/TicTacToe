@@ -92,6 +92,15 @@ struct ContentView: View {
                             }
                         }
                     }
+                    .alert(item: $alertItem) { alertItem in
+                        Alert(
+                            title: alertItem.title,
+                            message: alertItem.message,
+                            dismissButton: .default(alertItem.buttonTitle, action: {
+                                resetGame()
+                            }                   )
+                        )
+                    }
                 }
             }
             .disabled(isGameBoardDisable)
@@ -99,16 +108,6 @@ struct ContentView: View {
             .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
         }
         .edgesIgnoringSafeArea(.all)
-        .alert(item: $alertItem) { alertItem in
-            Alert(
-                title: alertItem.title,
-                message: alertItem.message,
-                dismissButton: .default(alertItem.buttonTitle, action: {
-                    resetGame()
-                }                   )
-            )
-        }
-        
     }
 }
 
