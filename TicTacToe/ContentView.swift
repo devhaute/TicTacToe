@@ -9,6 +9,7 @@ struct ContentView: View {
     
     @State private var moves: [Move?] = Array(repeating: nil, count: 9)
     @State private var isGameBoardDisable = false
+    @State private var alertItem: AlertItems?
     
     func isSquareOccupied(_ move: Move?) -> Bool {
         move == nil ? false : true
@@ -43,6 +44,10 @@ struct ContentView: View {
         return false
     }
     
+    func resetGame() {
+        self.moves = Array(repeating: nil, count: 9)
+    }
+    
     var body: some View {
         GeometryReader { proxy in
             LazyVGrid(columns: columns, spacing: 20) {
@@ -59,19 +64,32 @@ struct ContentView: View {
                     .onTapGesture {
                         if isSquareOccupied(moves[index]) { return }
                         self.moves[index] = Move(player: .human, boardIndex: index)
-                        self.isGameBoardDisable = true
                         
-                        if checkDrawCondition(moves) { return }
-                        if checkWinCondition(for: .human, in: moves) { return }
+                        if checkDrawCondition(moves) {
+                            alertItem = AlertContext.draw
+                            return
+                        }
+                        if checkWinCondition(for: .human, in: moves) {
+                            alertItem = AlertContext.humanWin
+                            return
+                        }
+                        
+                        self.isGameBoardDisable = true
                         
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             let computerMovePosition = determineComputerMovePosition()
                             self.moves[computerMovePosition] = Move(player: .computer, boardIndex: computerMovePosition)
-                            
-                            if checkDrawCondition(moves) { return }
-                            if checkWinCondition(for: .computer, in: moves) { return }
-                            
                             self.isGameBoardDisable = false
+                            
+                            if checkDrawCondition(moves) {
+                                alertItem = AlertContext.draw
+                                return
+                            }
+                            if checkWinCondition(for: .computer, in: moves) {
+                                alertItem = AlertContext.computerWin
+                                return
+                                
+                            }
                         }
                     }
                 }
@@ -81,6 +99,16 @@ struct ContentView: View {
             .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
         }
         .edgesIgnoringSafeArea(.all)
+        .alert(item: $alertItem) { alertItem in
+            Alert(
+                title: alertItem.title,
+                message: alertItem.message,
+                dismissButton: .default(alertItem.buttonTitle, action: {
+                    resetGame()
+                }                   )
+            )
+        }
+        
     }
 }
 
