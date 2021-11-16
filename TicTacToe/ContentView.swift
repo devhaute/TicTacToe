@@ -8,10 +8,28 @@ struct ContentView: View {
     ]
     
     @State private var moves: [Move?] = Array(repeating: nil, count: 9)
-    @State private var isHumansTurn = true
+    @State private var isGameBoardDisable = false
     
     func isSquareOccupied(_ move: Move?) -> Bool {
         move == nil ? false : true
+    }
+    
+    func determineComputerMovePosition() -> Int {
+        var movePosition = Int.random(in: 0...8)
+        
+        while isSquareOccupied(moves[movePosition]) {
+            movePosition = Int.random(in: 0...8)
+        }
+        
+        return movePosition
+    }
+    
+    func gameOverCheck(_ moves: [Move?]) -> Bool {
+        for move in moves where move == nil {
+            return false
+        }
+        
+        return true
     }
     
     var body: some View {
@@ -29,12 +47,21 @@ struct ContentView: View {
                     }
                     .onTapGesture {
                         if isSquareOccupied(moves[index]) { return }
+                        self.moves[index] = Move(player: .human, boardIndex: index)
+                        
+                        if gameOverCheck(moves) { return }
+                        self.isGameBoardDisable = true
+
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            let computerMovePosition = determineComputerMovePosition()
+                            self.moves[computerMovePosition] = Move(player: .computer, boardIndex: computerMovePosition)
                             
-                        self.moves[index] = Move(player: self.isHumansTurn ? .human : .computer, boardIndex: index)
-                        self.isHumansTurn.toggle()
+                            self.isGameBoardDisable = false
+                        }
                     }
                 }
             }
+            .disabled(isGameBoardDisable)
             .padding(5)
             .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
         }
