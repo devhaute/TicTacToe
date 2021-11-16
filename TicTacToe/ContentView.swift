@@ -24,12 +24,23 @@ struct ContentView: View {
         return movePosition
     }
     
-    func gameOverCheck(_ moves: [Move?]) -> Bool {
-        for move in moves where move == nil {
-            return false
+    func checkDrawCondition(_ moves: [Move?]) -> Bool {
+        return moves.compactMap({ $0 }).count == moves.count
+    }
+    
+    func checkWinCondition(for player: Player, in moves: [Move?]) -> Bool {
+        let winPattern: Set<Set<Int>> = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]
+        ]
+        
+        let playerMoves = moves.compactMap { $0 }.filter { $0.player == player }
+        let playerPositions = Set(playerMoves.map({ move in move.boardIndex }))
+        
+        for pattern in winPattern where pattern.isSubset(of: playerPositions) {
+            return true
         }
         
-        return true
+        return false
     }
     
     var body: some View {
@@ -48,13 +59,17 @@ struct ContentView: View {
                     .onTapGesture {
                         if isSquareOccupied(moves[index]) { return }
                         self.moves[index] = Move(player: .human, boardIndex: index)
-                        
-                        if gameOverCheck(moves) { return }
                         self.isGameBoardDisable = true
-
+                        
+                        if checkDrawCondition(moves) { return }
+                        if checkWinCondition(for: .human, in: moves) { return }
+                        
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             let computerMovePosition = determineComputerMovePosition()
                             self.moves[computerMovePosition] = Move(player: .computer, boardIndex: computerMovePosition)
+                            
+                            if checkDrawCondition(moves) { return }
+                            if checkWinCondition(for: .computer, in: moves) { return }
                             
                             self.isGameBoardDisable = false
                         }
